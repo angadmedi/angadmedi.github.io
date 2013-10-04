@@ -1,17 +1,16 @@
 <!DOCTYPE html> 
 	<html>
 		<head>
-		<body bgcolor= black>
+<body bgcolor=black>
 			<title>Visual Reference-MR MEDI</title>
 			<link href='http://fonts.googleapis.com/css?family=Monoton' rel='stylesheet' type='text/css'> <link href='http://fonts.googleapis.com/css?family=Raleway:400,300' rel='stylesheet' type='text/css'>
 			<style type="text/css">
 				body{
-					color: white;
 					font-family: 'Raleway', sans-serif;
 					font-size: 24px;
 					line-height: 1.4;
 					width: 80%;
-					margin: 0 auto 0 auto;
+					
 					}
 			
 			h1{ color: rgba(231,66,96,1); font-family: Monoton, cursive; font-size:25px;}	
@@ -21,13 +20,51 @@
 					max-width: 100%;
 					height: auto;
 					}
-			.alpha {color: rgba(231,66,96,1); font-family: Monoton, cursive; font-size: 20px; width:20%; float: right}
+			.alpha {color: rgba(231,66,96,1); font-family: Monoton, cursive; font-size: 20px; width:20%;}
 			
 			 
 			 a:visited{color: rgba(231,66,96,1);}
-			a:hover{color:black;}
-			
-			.beta {width:50%;}
+			 a:hover{color:black;}
+				
+				
+				/*
+					Float + Overflow
+					Good for when you know the dimension of one element, but second element needs to be flexible
+					in width.
+					
+					.header { width: 100%; overflow: hidden; text-align: right;}
+				
+					.alpha,
+					.beta { 
+						display: inline-block;
+					}
+					
+					.beta { float: left; width: 70%; text-align: left;}
+					
+					.alpha { overflow: hidden; text-align: right;}
+				*/
+				
+				.header {
+					overflow: hidden;
+					margin: 0 0 60px;
+					background: yellow;
+				}				
+				
+				.beta {
+					float: left;
+					width: 70%;
+				}
+					
+					.beta h1 {
+						margin: 0;
+					}
+					
+					
+				.alpha {
+					float: right;
+					width: 30%;
+					text-align: right;
+				}
 				
 				
 			</style>
@@ -35,9 +72,12 @@
 
 		<body>
 	
-		
-			<div class="beta"><h1>Visual Reference</h1></div>
+		<div class="header">
+			<div class="beta">
+				<h1>Visual Reference</h1>
+			</div>
 			<div class="alpha"><a href="index.html">OMP OMP</a></div>
+		</div>
 		
 			<a href="http://designspiration.net"><img src="images/designspiration.png"></a>
 			<p>Designspiration is a website meant to help designers inspire one another. This website has a normal search feature, where you can look up images using words that have been cataloged with that image. However, images can also found based on color. When searching this way, the user is provided a color chart where they can choose up to 5 colors to search at once. I think this is an interesting feature that can help designers think about design when looking at other peoples work. 
