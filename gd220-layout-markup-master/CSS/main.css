@@ -1,0 +1,63 @@
+/*General CSS*/
+html, body{padding:0; margin:0;}
+body{line-height: 1.4; font-family:sans-serif;}
+
+video,
+	object,
+	embed,
+	img {max-width:100%; height:auto;}
+
+.site_header{padding:10px 15px; color:#fbff00; background-color:silver; text-align: center; overflow:hidden;}
+
+.branding{margin:0 0 15px;}
+
+.site_nav{padding:0; margin:0; list-style:none;}
+
+
+.site_nav a{text-decoration: none; color: white; font-size:14; display:block; padding:.5em; background-color:lightblue; border:2px gray solid;border-radius:20px; text-align: center;}
+
+.site_content{overflow:hidden;
+}
+
+.main_content, sub_content{padding: 0 15px;}
+
+.sub_content{background-color: aqua; color:pink;}
+
+.site_nav li{margin-bottom: 3px;}
+
+.site_nav a:hover{color:lightblue; background-color:gray; border: 2px lightblue solid;
+	transition:background-color 3s linear;
+	-webkit-transition:background-color 3s linear; color:3s; border:3s;
+	
+}
+
+
+
+
+/*MOBILE CSS*/
+@media screen and (max-width:760px){
+	video,
+	object,
+	embed,
+	img {
+		display:block; margin-bottom:1em; width:100%;
+	}
+
+}
+
+
+/*DESKTOP CSS*/
+@media screen and (min-width:760px)
+{
+	.site_header{text-align: left;}
+	.branding{float: left; width: 300px; margin-right: 30px;}
+	.site_nav li{display:inline-block; overflow: hidden; margin-top: 35px;}
+	.site_nav li{display:inline-block; margin-right:15px;}
+
+
+
+.main_content{float: left; width:50%; padding:0; margin-left:5%; }
+
+.sub_content{float:right; width:35%; padding-bottom: 500000px; margin-bottom: -500000px;}
+
+}
