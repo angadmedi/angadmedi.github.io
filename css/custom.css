@@ -1,0 +1,123 @@
+a{margin:0; padding:0; color:inherit; cursor: hand;}
+
+a:hover{margin:0; padding:0; color:inherit; text-decoration: none;
+	
+	 -webkit-transition:color 1s ease-in;  
+   -moz-transition:color 1s ease-in;  
+   -o-transition:color 1s ease-in;  
+   transition:color 1s ease-in;  
+}
+.name{padding-top:15px; margin-top:15px; padding-bottom: 0; margin-bottom:15px; overflow:hidden;}
+.nopadding{padding:0; margin:0;}
+.row{padding:10px;}
+*{
+	font-family:'Cutive Mono', serif; color:black;}
+	
+	 
+li{
+	list-style: none;
+	display:block;}
+	
+	
+li:hover{
+	color:white; 
+	cursor:default;
+	background-color:black;}
+
+ul{padding:0;}
+
+
+h1{font-family:'Cutive Mono', serif;
+	font-size:85px;
+	padding-top:0;
+	line-height: .95;
+	padding-bottom: 0;
+	height:66px
+	}
+	
+.right{z-index: 1;}
+
+span{z-index: 100;}
+.revisit{color:red; text-decoration: underline; cursor: inherit; z-index:2;}
+	
+.navigation{
+padding-top:15px;
+	padding-left:4px;
+	display:block; 
+	
+	
+	}
+	
+.navigationpages_item:active{background-color:maroon;}
+
+.navigationpages{text-align: center; padding-bottom: 20px;}
+.navigationpages_item{display:inline-block; text-align: center; width:15%; padding:4px;}
+	
+
+.logo{text-align: center; padding-left:40px; padding-bottom:40px;}
+
+	
+.titlerow{text-align:center;}
+.navhome{padding-top: 0px;}
+
+.projecttypes{font-size:25px; padding-top:100px; padding-bottom:60px; line-height: .9;}
+
+
+.arrow{display:inline-block;}
+
+.copy{font-size:14px;}
+
+
+.pagetitle{font-size:30px; text-align: center; padding-bottom:10px; line-height: .8}
+
+.buttons{padding-top:210px;}
+
+
+
+.bookbuttons{padding-top:70px;}
+
+.inline{display:inline;}
+
+.buttons{padding:10px;}
+
+
+.bold{font-family: 'Cutive', serif; font-size:14px;}
+
+#beforeafter{text-align: center;}
+
+
+.before, .after{cursor:default;}
+.before:hover {text-decoration: underline;}
+
+.apppromo{padding-top:0;}
+.after:hover{text-decoration: underline;}
+
+.pictures{text-align: center;}
+
+.copy{padding-top:10%;}
+
+@media (max-width: 767px) {.navigation{padding-left:15px; text-align: center;} }
+
+
+@media (max-width: 767px) {.pictures{margin-left:20%; text-align: center;} }
+
+
+@media (max-width: 767px) {.pagetitle{padding-top:10px; text-align:center;} }
+
+@media (max-width:767px) {li{border:1px dotted black;}}
+
+
+
+
+
+@media (min-width: 767px) {.navigation{padding-top:15px;}}
+
+
+@media (max-width:627px) {.pagetitle{font-size:30px;}}
+
+@media (max-width:500px) {.navigationpages_item{font-size:10px;}}
+
+
+@media (min-width:500px) {.gd2pics{margin-left:35%}}
+
+@media (min-width:900px) {.gd2pics{margin-left:37%}}
