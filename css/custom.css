@@ -163,6 +163,8 @@ video{width:700px;}
 .research{padding-bottom:50px;}
 
 
+.brewersartlink{text-decoration:underline; color: red;}
+
 #myCarousel{padding-bottom:80px;}
 
 @media (max-width: 767px) {.navigation{padding-left:15px; text-align: center;} }
