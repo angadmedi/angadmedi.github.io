@@ -57,11 +57,11 @@ padding-top:15px;
 	.carousel-indicators li {
   display: inline-block;
   width: 8px;
-  height: 10px;
-  margin: 1px;
+  height: 8px;
+  margin: 0px;
   text-indent: -999px;
   cursor: pointer;
-  background-color: #000 \9;
+  background-color: #000;
   background-color: rgba(0, 0, 0, 0);
   border: 1px solid #000000;
   border-radius: 10px;
@@ -70,7 +70,7 @@ padding-top:15px;
 
 .carousel-indicators .active {
   width: 8px;
-  height: 12px;
+  height: 8px;
   margin: 0;
   background-color: black;
 }
@@ -144,8 +144,26 @@ padding-top:15px;
 
 video{width:700px;}
 
-#afterafter{padding-bottom: 22%;}
 
+
+.blogblock{padding-top:120px;}
+
+
+.blogtext{padding-top:30px;}
+
+.blogtitle{padding-bottom:40px;}
+
+.blogsubhead{padding-bottom:20px; margin-top:-20px; text-align: right; font-weight:600;}
+
+.boxshadow{box-shadow:10px 10px 20px gray;}
+
+
+.afterafter{padding:15px;}
+
+.research{padding-bottom:50px;}
+
+
+#myCarousel{padding-bottom:80px;}
 
 @media (max-width: 767px) {.navigation{padding-left:15px; text-align: center;} }
 
@@ -172,3 +190,7 @@ video{width:700px;}
 @media (min-width:500px) {.gd2pics{margin-left:35%}}
 
 @media (min-width:900px) {.gd2pics{margin-left:37%}}
+
+@media (max-width:500px) {.blogtitle{padding-bottom:10px;}}
+
+@media (max-width:500px) {.blogblock{padding-top:7px;}}
