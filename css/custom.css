@@ -7,11 +7,15 @@ a:hover{margin:0; padding:0; color:inherit; text-decoration: none;
    -o-transition:color 1s ease-in;  
    transition:color 1s ease-in;  
 }
-.name{padding-top:15px; margin-top:15px; padding-bottom: 0; margin-bottom:15px; overflow:hidden;}
+
+
+
+.name{margin-top:15px; padding-bottom: 0; margin-bottom:45px; overflow:hidden; font-size: 85px;}
 .nopadding{padding:0; margin:0;}
 .row{padding:10px;}
 *{
-	font-family:'Cutive Mono', serif; color:black;}
+	font-family:'Cutive Mono', serif; color:black;
+	}
 	
 	 
 li{
@@ -48,9 +52,36 @@ padding-top:15px;
 	
 	}
 	
+
+	
+	.carousel-indicators li {
+  display: inline-block;
+  width: 8px;
+  height: 10px;
+  margin: 1px;
+  text-indent: -999px;
+  cursor: pointer;
+  background-color: #000 \9;
+  background-color: rgba(0, 0, 0, 0);
+  border: 1px solid #000000;
+  border-radius: 10px;
+  
+}
+
+.carousel-indicators .active {
+  width: 8px;
+  height: 12px;
+  margin: 0;
+  background-color: black;
+}
+
+.imagecenter{display:block; margin-left:auto; margin-right:auto;}
+
+.item .imagecenter{border:1px solid black;}
+	
 .navigationpages_item:active{background-color:maroon;}
 
-.navigationpages{text-align: center; padding-bottom: 20px;}
+.navigationpages{text-align: center; padding-bottom: 20px; }
 .navigationpages_item{display:inline-block; text-align: center; width:15%; padding:4px;}
 	
 
@@ -63,31 +94,32 @@ padding-top:15px;
 .projecttypes{font-size:25px; padding-top:100px; padding-bottom:60px; line-height: .9;}
 
 
-.arrow{display:inline-block;}
+
 
 .copy{font-size:14px;}
 
 
-.pagetitle{font-size:30px; text-align: center; padding-bottom:10px; line-height: .8}
+.pagetitle{font-size:30px; text-align: center;line-height: .8}
 
 .buttons{padding-top:210px;}
 
 
 
-.bookbuttons{padding-top:70px;}
+.bookbuttons{padding-top:70px; height:20px;}
 
 .inline{display:inline;}
 
 .buttons{padding:10px;}
 
+.arrows{padding-top:300%; }
 
 .bold{font-family: 'Cutive', serif; font-size:14px;}
 
 #beforeafter{text-align: center;}
 
 
-.before, .after{cursor:default;}
-.before:hover {text-decoration: underline;}
+.before, .after, .before1, .after1{cursor:pointer;}
+.before:hover, .after:hover, .before1:hover, .after1:hover {text-decoration: underline;}
 
 .apppromo{padding-top:0;}
 .after:hover{text-decoration: underline;}
@@ -95,6 +127,25 @@ padding-top:15px;
 .pictures{text-align: center;}
 
 .copy{padding-top:10%;}
+
+.mainname{font-size: 55px; line-height: .7; padding-top:20px; padding-bottom:20px;}
+
+
+.beforeafter{max-width: 100%; height:auto;}
+
+.indicators{border:1px solid black;}
+
+.subtitle{font-size:18px; padding-top:100px}
+
+.item{padding-top:60px;}
+
+
+.logo{padding-top:60px;}
+
+video{width:700px;}
+
+#afterafter{padding-bottom: 22%;}
+
 
 @media (max-width: 767px) {.navigation{padding-left:15px; text-align: center;} }
 
