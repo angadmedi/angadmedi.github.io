@@ -111,7 +111,7 @@ padding-top:15px;
 
 .buttons{padding:10px;}
 
-.arrows{padding-top:300%; }
+.arrows{padding-top:200%; }
 
 .bold{font-family: 'Cutive', serif; font-size:14px;}
 
@@ -126,7 +126,7 @@ padding-top:15px;
 
 .pictures{text-align: center;}
 
-.copy{padding-top:10%;}
+.copy{padding-top:5%;}
 
 .mainname{font-size: 55px; line-height: .7; padding-top:20px; padding-bottom:20px;}
 
@@ -173,8 +173,6 @@ video{width:700px;}
 
 @media (max-width: 767px) {.pagetitle{padding-top:10px; text-align:center;} }
 
-@media (max-width:767px) {li{border:1px dotted black;}}
-
 
 
 
@@ -194,3 +192,5 @@ video{width:700px;}
 @media (max-width:500px) {.blogtitle{padding-bottom:10px;}}
 
 @media (max-width:500px) {.blogblock{padding-top:7px;}}
+
+@media (max-width:700px) {.arrows{padding-top:350%;}}
