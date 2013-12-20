@@ -10,11 +10,11 @@ a:hover{margin:0; padding:0; color:inherit; text-decoration: none;
 
 
 
-.name{margin-top:15px; padding-bottom: 0; margin-bottom:45px; overflow:hidden; font-size: 85px;}
+.name{margin-top: 20px; padding-bottom: 0; margin-bottom:25px; overflow:hidden; font-size: 45px; text-align: center; }
 .nopadding{padding:0; margin:0;}
 .row{padding:10px;}
 *{
-	font-family:'Cutive Mono', serif; color:black;
+	font-family:'Cutive Mono', serif;
 	}
 	
 	 
@@ -85,7 +85,9 @@ padding-top:15px;
 .navigationpages_item{display:inline-block; text-align: center; width:15%; padding:4px;}
 	
 
-.logo{text-align: center; padding-left:40px; padding-bottom:40px;}
+.logo{text-align: center;}
+
+
 
 	
 .titlerow{text-align:center;}
@@ -155,7 +157,7 @@ video{width:700px;}
 
 .blogsubhead{padding-bottom:20px; margin-top:-20px; text-align: right; font-weight:600;}
 
-.boxshadow{box-shadow:10px 10px 20px gray;}
+.boxshadow{border-radius: 50%;}
 
 
 .afterafter{padding:15px;}
