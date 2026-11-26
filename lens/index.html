@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<title>Lens HUD</title>
+<style>
+:root{--c:#39e6ff;--bg:rgba(2,10,14,.62);--warn:#ffb020;--bad:#ff4d5e;--ok:#3dff9a;
+  --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);--sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;background:#000;color:var(--c);overflow:hidden;
+  font:12px/1.35 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em;overscroll-behavior:none}
+#cam,#still,#hud{position:fixed;inset:0;width:100%;height:100%}
+#cam{object-fit:cover;background:#000;transform-origin:50% 50%}
+#still{display:none;object-fit:cover}
+#hud{touch-action:none}
+.bar{position:fixed;left:0;right:0;display:flex;align-items:center;gap:8px;pointer-events:none;
+  padding-left:calc(10px + var(--sl));padding-right:calc(10px + var(--sr))}
+#top{top:calc(6px + var(--st));justify-content:space-between;text-shadow:0 0 6px #000}
+#top .l,#top .r{display:flex;gap:8px;align-items:center}
+.dot{display:inline-flex;align-items:center;gap:3px;font-size:10px;opacity:.95}
+.dot i{width:7px;height:7px;border-radius:50%;background:#555;display:inline-block}
+.dot.ok i{background:var(--ok)}.dot.warn i{background:var(--warn)}.dot.bad i{background:var(--bad)}
+#read{position:fixed;left:calc(10px + var(--sl));bottom:calc(132px + var(--sb));pointer-events:none;
+  text-shadow:0 0 6px #000;font-size:11px;white-space:pre}
+#zoomWrap{position:fixed;right:calc(8px + var(--sr));bottom:calc(140px + var(--sb));display:flex;flex-direction:column;align-items:center;gap:8px}
+.btn{pointer-events:auto;background:var(--bg);color:var(--c);border:1px solid var(--c);border-radius:8px;
+  font:inherit;padding:9px 11px;min-width:44px;min-height:44px;text-transform:uppercase}
+.btn:active{background:var(--c);color:#000}
+.btn.on{background:var(--c);color:#000}
+.btn[disabled]{opacity:.4}
+#modes{bottom:calc(10px + var(--sb));justify-content:center;gap:6px;pointer-events:auto}
+#modes .btn{flex:1;max-width:92px;padding:9px 4px;font-size:11px}
+#actions{bottom:calc(66px + var(--sb));justify-content:center;gap:10px;pointer-events:auto}
+#shutter{min-width:120px;font-size:13px;font-weight:700;border-width:2px}
+#panel{position:fixed;left:calc(8px + var(--sl));right:calc(8px + var(--sr));bottom:calc(126px + var(--sb));max-height:52vh;display:none;
+  flex-direction:column;background:rgba(2,10,14,.9);border:1px solid var(--c);border-radius:10px;overflow:hidden}
+#panel header{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid var(--c);font-weight:700}
+#panelBody{padding:10px;overflow:auto;-webkit-overflow-scrolling:touch;white-space:pre-wrap;word-break:break-word;
+  font-size:14px;line-height:1.45;color:#eafcff;-webkit-user-select:text;user-select:text;letter-spacing:0}
+#panelNote{padding:0 10px 8px;font-size:10px;opacity:.8}
+#panel footer{display:flex;gap:6px;padding:8px;border-top:1px solid var(--c)}
+#panel footer .btn{flex:1}
+#toast{position:fixed;left:50%;top:calc(92px + var(--st));transform:translateX(-50%);background:var(--bg);border:1px solid var(--c);
+  padding:6px 10px;border-radius:6px;display:none;max-width:86vw;text-align:center;pointer-events:none}
+.sheet{position:fixed;inset:0;background:rgba(0,6,9,.94);display:none;overflow:auto;-webkit-overflow-scrolling:touch;
+  padding:calc(16px + var(--st)) calc(16px + var(--sr)) calc(24px + var(--sb)) calc(16px + var(--sl))}
+.sheet h1{font-size:18px;margin:0 0 4px;letter-spacing:.2em}
+.sheet h2{font-size:12px;margin:18px 0 6px;opacity:.8;border-bottom:1px solid var(--c);padding-bottom:4px}
+.sheet p{color:#cfeef5;letter-spacing:0;font-size:13px;margin:6px 0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;color:#cfeef5;letter-spacing:0;font-size:13px}
+.row select,.row input{font:inherit;font-size:16px;background:#031318;color:var(--c);border:1px solid var(--c);border-radius:6px;padding:7px;max-width:58%;
+  -webkit-user-select:text;user-select:text}
+.row input[type=range]{padding:0;width:50%}
+.row input[type=checkbox]{width:22px;height:22px}
+#start{display:block}
+#start .btn{width:100%;font-size:16px;padding:14px;margin-top:16px;font-weight:700}
+#startErr{color:var(--bad);white-space:pre-wrap}
+</style>
+</head>
+<body>
+<video id="cam" playsinline muted autoplay></video>
+<canvas id="still"></canvas>
+<canvas id="hud"></canvas>
+
+<div id="top" class="bar">
+  <div class="l"><b id="modeName">SCAN</b>
+    <span class="dot" id="dCam"><i></i>CAM</span><span class="dot" id="dAi"><i></i>AI</span>
+    <span class="dot" id="dGps"><i></i>GPS</span><span class="dot" id="dCmp"><i></i>CMP</span></div>
+  <div class="r"><span id="fps"></span><span id="clock"></span></div>
+</div>
+<div id="read"></div>
+<div id="toast"></div>
+
+<div id="zoomWrap">
+  <button class="btn" id="torch" style="display:none">Light</button>
+  <button class="btn" id="zIn">+</button>
+  <div id="zVal">1.0x</div>
+  <button class="btn" id="zOut">&minus;</button>
+</div>
+
+<div id="panel">
+  <header><span id="panelTitle">RESULT</span><span id="panelMeta"></span></header>
+  <div id="panelBody"></div>
+  <div id="panelNote"></div>
+  <footer>
+    <button class="btn" id="pCopy">Copy</button>
+    <button class="btn" id="pAi">AI read</button>
+    <button class="btn" id="pClose">Live</button>
+  </footer>
+</div>
+
+<div id="actions" class="bar">
+  <button class="btn" id="auto" style="display:none">Auto</button>
+  <button class="btn" id="shutter">Identify</button>
+  <button class="btn" id="gear">Opts</button>
+</div>
+<div id="modes" class="bar">
+  <button class="btn on" data-m="scan">Scan</button>
+  <button class="btn" data-m="read">Read</button>
+  <button class="btn" data-m="nav">Nav</button>
+  <button class="btn" data-m="clean">Clean</button>
+</div>
+
+<div class="sheet" id="opts">
+  <h1>OPTIONS</h1>
+  <h2>DISPLAY</h2>
+  <div class="row"><span>HUD color</span><select id="oColor">
+    <option value="#39e6ff">Cyan</option><option value="#ffb020">Amber</option><option value="#3dff9a">Green</option>
+    <option value="#ff5a4d">Red</option><option value="#ffffff">White</option></select></div>
+  <div class="row"><span>Units</span><select id="oUnits"><option value="imp">Feet / miles</option><option value="met">Meters / km</option></select></div>
+  <div class="row"><span>Compass tape</span><input type="checkbox" id="oTape"></div>
+  <div class="row"><span>Center reticle</span><input type="checkbox" id="oRet"></div>
+  <h2>OBJECT SCAN</h2>
+  <div class="row"><span>Min confidence <b id="oConfV"></b></span><input type="range" id="oConf" min="30" max="90" step="5"></div>
+  <div class="row"><span>Max objects</span><select id="oMax"><option>5</option><option>10</option><option>20</option></select></div>
+  <div class="row"><span>Distance estimates</span><input type="checkbox" id="oDist"></div>
+  <div class="row"><span>Lens field of view <b id="oFovV"></b></span><input type="range" id="oFov" min="45" max="80" step="1"></div>
+  <p>Distance is estimated from typical object sizes, so treat it as rough. If readings run long, raise the field of view; if short, lower it.</p>
+  <h2>AI DEEP SCAN (OPTIONAL)</h2>
+  <p>Brand, model, size and hard-to-read text need a vision model. Paste an Anthropic API key. It is stored only in this browser on this phone and sent only to api.anthropic.com. Each scan costs a small amount on your key.</p>
+  <div class="row"><span>API key</span><input type="password" id="oKey" placeholder="sk-ant-..." autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+  <div class="row"><span>Model</span><input type="text" id="oModel" autocapitalize="off" spellcheck="false"></div>
+  <h2>NAV</h2>
+  <div class="row"><span>Saved waypoint</span><button class="btn" id="oClearWp">Clear</button></div>
+  <button class="btn" id="oDone" style="width:100%;margin-top:18px;font-size:15px">Done</button>
+</div>
+
+<div class="sheet" id="start">
+  <h1>LENS HUD</h1>
+  <p>Live camera overlay. Everything shown comes from the camera, the on-device detector or the phone's sensors.</p>
+  <h2>MODES</h2>
+  <p><b>Scan</b> &ndash; boxes and labels on about 80 everyday object types, with confidence and rough distance.</p>
+  <p><b>Read</b> &ndash; zoom in on text, frame it in the box, and it is transcribed on screen.</p>
+  <p><b>Nav</b> &ndash; compass, GPS, speed, altitude, and a marker that points back to a spot you save.</p>
+  <p><b>Clean</b> &ndash; compass and reticle only.</p>
+  <h2>PERMISSIONS</h2>
+  <p>Safari will ask for camera, motion (compass) and location. Camera is required; the other two are optional.</p>
+  <p id="startErr"></p>
+  <button class="btn" id="go">Start</button>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var LS={get:function(k,d){try{var v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+        set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+var S=Object.assign({color:'#39e6ff',units:'imp',tape:true,ret:true,conf:50,max:10,dist:true,fov:63,key:'',model:'claude-haiku-5-5'},LS.get('lens.settings',{}));
+var wp=LS.get('lens.waypoint',null);
+var CDN={tf:'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js',
+         coco:'https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js',
+         tess:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'};
+// Typical real-world heights in meters, used only for the rough distance estimate.
+var HEIGHT={person:1.7,bicycle:1.05,car:1.5,motorcycle:1.15,bus:3.1,truck:3.2,'traffic light':1.0,'fire hydrant':0.75,'stop sign':0.75,
+  'parking meter':1.3,bench:0.85,cat:0.28,dog:0.55,backpack:0.46,umbrella:0.9,suitcase:0.65,bottle:0.24,'wine glass':0.2,cup:0.1,
+  chair:0.9,couch:0.85,'potted plant':0.5,'dining table':0.75,toilet:0.75,tv:0.6,laptop:0.23,'cell phone':0.15,microwave:0.3,
+  oven:0.9,refrigerator:1.7,book:0.23,vase:0.3,'teddy bear':0.35};
+
+var video=$('cam'),hud=$('hud'),still=$('still'),ctx=hud.getContext('2d');
+var W=0,H=0,DPR=1,mode='scan',running=false,frozen=false,busy=false,autoRead=false;
+var track=null,caps={},zoom=1,nativeZoom=false,zMax=5,cssZoom=1,torchOn=false;
+var model=null,modelState='off',tracks=[],nextId=1,lockId=null,detFps=0;
+var heading=null,headingAcc=null,pitch=null,cmpState='off',gps=null,gpsState='off';
+var ocrWorker=null,ocrState='off',lastShot=null,panelKind='',panelText='';
+
+/* ---------- utilities ---------- */
+function toast(msg,ms){var t=$('toast');t.textContent=msg;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){t.style.display='none'},ms||2600)}
+function setDot(id,st){$(id).className='dot '+(st||'')}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
+function loadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.async=true;
+  var to=setTimeout(function(){rej(new Error('timeout'))},30000);
+  s.onload=function(){clearTimeout(to);res()};s.onerror=function(){clearTimeout(to);rej(new Error('load failed'))};document.head.appendChild(s)})}
+function fmtDist(m){if(m==null||!isFinite(m))return '--';
+  if(S.units==='imp'){var ft=m*3.28084;return ft<1000?(ft<20?ft.toFixed(1):Math.round(ft))+' ft':(m/1609.344).toFixed(2)+' mi'}
+  return m<1000?(m<10?m.toFixed(1):Math.round(m))+' m':(m/1000).toFixed(2)+' km'}
+function fmtSpeed(ms){if(ms==null||!isFinite(ms)||ms<0)return '--';return S.units==='imp'?(ms*2.23694).toFixed(1)+' mph':(ms*3.6).toFixed(1)+' km/h'}
+function fmtAlt(m){if(m==null||!isFinite(m))return '--';return S.units==='imp'?Math.round(m*3.28084)+' ft':Math.round(m)+' m'}
+function cardinal(d){return ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(d/22.5)%16]}
+function norm(d){return ((d%360)+360)%360}
+function angDiff(a,b){return ((a-b+540)%360)-180}
+function haversine(a,b){var R=6371000,p=Math.PI/180,dLat=(b.lat-a.lat)*p,dLon=(b.lon-a.lon)*p;
+  var x=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(a.lat*p)*Math.cos(b.lat*p)*Math.sin(dLon/2)*Math.sin(dLon/2);return 2*R*Math.asin(Math.min(1,Math.sqrt(x)))}
+function bearing(a,b){var p=Math.PI/180,y=Math.sin((b.lon-a.lon)*p)*Math.cos(b.lat*p),
+  x=Math.cos(a.lat*p)*Math.sin(b.lat*p)-Math.sin(a.lat*p)*Math.cos(b.lat*p)*Math.cos((b.lon-a.lon)*p);return norm(Math.atan2(y,x)/p)}
+function applyTheme(){document.documentElement.style.setProperty('--c',S.color)}
+
+/* ---------- layout and coordinate mapping ---------- */
+function resize(){DPR=Math.min(window.devicePixelRatio||1,3);W=window.innerWidth;H=window.innerHeight;
+  hud.width=Math.round(W*DPR);hud.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0)}
+function vmap(){var vw=video.videoWidth||1280,vh=video.videoHeight||720,s=Math.max(W/vw,H/vh)*cssZoom;
+  return {vw:vw,vh:vh,s:s,ox:(W-vw*s)/2,oy:(H-vh*s)/2}}
+function focalPx(){var m=vmap(),long=Math.max(m.vw,m.vh);return (long/2)/Math.tan(S.fov*Math.PI/360)*(nativeZoom?zoom:1)}
+
+/* ---------- camera ---------- */
+function startCamera(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)
+    return Promise.reject(new Error('This browser does not allow camera access here. Open the page in Safari itself (not inside another app) over https.'));
+  return navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}})
+  .then(function(stream){video.srcObject=stream;track=stream.getVideoTracks()[0];
+    try{caps=track.getCapabilities?track.getCapabilities():{}}catch(e){caps={}}
+    if(caps.zoom&&caps.zoom.max>caps.zoom.min){nativeZoom=true;zMax=Math.min(caps.zoom.max/Math.max(caps.zoom.min,1),10)}
+    if(caps.torch)$('torch').style.display='';
+    track.addEventListener('ended',function(){setDot('dCam','bad');toast('Camera stopped. Reload the page.',6000)});
+    return video.play().catch(function(){})}).then(function(){setDot('dCam','ok')})}
+function setZoom(z){zoom=Math.max(1,Math.min(zMax,z));$('zVal').textContent=zoom.toFixed(1)+'x';
+  if(nativeZoom){clearTimeout(setZoom.t);setZoom.t=setTimeout(function(){
+      track.applyConstraints({advanced:[{zoom:zoom*Math.max(caps.zoom.min,1)}]}).catch(function(){nativeZoom=false;zMax=5;setZoom(zoom)})},60)}
+  else{cssZoom=zoom;video.style.transform='scale('+cssZoom+')'}}
+function toggleTorch(){torchOn=!torchOn;track.applyConstraints({advanced:[{torch:torchOn}]}).then(function(){$('torch').classList.toggle('on',torchOn)})
+  .catch(function(){torchOn=false;toast('Light not available')})}
+
+/* ---------- sensors ---------- */
+function onOrient(e){var h=null;
+  if(typeof e.webkitCompassHeading==='number'&&!isNaN(e.webkitCompassHeading)){h=e.webkitCompassHeading;headingAcc=e.webkitCompassAccuracy}
+  else if(e.absolute&&typeof e.alpha==='number'){h=360-e.alpha}
+  if(h!=null){var so=(screen.orientation&&typeof screen.orientation.angle==='number')?screen.orientation.angle:(window.orientation||0);
+    h=norm(h+so);heading=heading==null?h:norm(heading+angDiff(h,heading)*0.25);
+    cmpState=(headingAcc!=null&&headingAcc>=0&&headingAcc>25)?'warn':'ok';setDot('dCmp',cmpState)}
+  var portrait=H>=W;pitch=(portrait&&typeof e.beta==='number')?e.beta-90:null}
+function startMotion(permPromise){
+  if(!window.DeviceOrientationEvent){setDot('dCmp','bad');return}
+  var attach=function(){window.addEventListener('deviceorientation',onOrient,true);
+    window.addEventListener('deviceorientationabsolute',onOrient,true);
+    setTimeout(function(){if(heading==null){cmpState='bad';setDot('dCmp','bad')}},4000)};
+  if(permPromise)permPromise.then(function(r){if(r==='granted')attach();else{cmpState='bad';setDot('dCmp','bad')}}).catch(function(){cmpState='bad';setDot('dCmp','bad')});
+  else attach()}
+function startGps(){if(!navigator.geolocation){setDot('dGps','bad');return}
+  setDot('dGps','warn');
+  navigator.geolocation.watchPosition(function(p){var c=p.coords;gps={lat:c.latitude,lon:c.longitude,acc:c.accuracy,alt:c.altitude,spd:c.speed,t:Date.now()};
+    gpsState=c.accuracy<=30?'ok':'warn';setDot('dGps',gpsState)},
+    function(){gpsState='bad';setDot('dGps','bad')},{enableHighAccuracy:true,maximumAge:2000,timeout:20000})}
+
+/* ---------- object detection ---------- */
+function loadDetector(){modelState='loading';setDot('dAi','warn');
+  return loadScript(CDN.tf).then(function(){return loadScript(CDN.coco)}).then(function(){return window.tf.ready()})
+  .then(function(){return window.cocoSsd.load({base:'lite_mobilenet_v2'})})
+  .then(function(m){model=m;modelState='ok';setDot('dAi','ok')})
+  .catch(function(e){modelState='bad';setDot('dAi','bad');toast('Object detector failed to load. Check the connection and reload.',6000);console.warn(e)})}
+function iou(a,b){var x1=Math.max(a[0],b[0]),y1=Math.max(a[1],b[1]),x2=Math.min(a[0]+a[2],b[0]+b[2]),y2=Math.min(a[1]+a[3],b[1]+b[3]);
+  var i=Math.max(0,x2-x1)*Math.max(0,y2-y1);return i/(a[2]*a[3]+b[2]*b[3]-i||1)}
+function updateTracks(preds){var now=performance.now(),used={};
+  preds.forEach(function(p){var best=null,bi=0.3;
+    tracks.forEach(function(t){if(t.cls===p.class&&!used[t.id]){var v=iou(t.box,p.bbox);if(v>bi){bi=v;best=t}}});
+    if(best){used[best.id]=1;for(var k=0;k<4;k++)best.box[k]+=(p.bbox[k]-best.box[k])*0.6;best.score+=(p.score-best.score)*0.5;best.seen=now;best.hits++}
+    else{var t={id:nextId++,cls:p.class,score:p.score,box:p.bbox.slice(),seen:now,hits:1};used[t.id]=1;tracks.push(t)}});
+  tracks=tracks.filter(function(t){return now-t.seen<450})}
+function estDistance(t){var h=HEIGHT[t.cls];if(!h||!S.dist)return null;var m=vmap(),b=t.box,e=0.02;
+  if(b[0]<m.vw*e||b[1]<m.vh*e||b[0]+b[2]>m.vw*(1-e)||b[1]+b[3]>m.vh*(1-e))return null; // cut off by frame edge: no honest estimate
+  return h*focalPx()/Math.max(b[3],1)}
+function detectLoop(){var last=performance.now();
+  (function step(){if(!running)return;
+    if(mode==='scan'&&model&&!frozen&&!document.hidden&&video.readyState>=2&&video.videoWidth){
+      model.detect(video,S.max,S.conf/100).then(function(p){updateTracks(p);var n=performance.now();detFps=detFps*0.8+(1000/Math.max(n-last,1))*0.2;last=n})
+      .catch(function(e){console.warn(e)}).then(function(){requestAnimationFrame(step)})}
+    else{tracks=[];last=performance.now();setTimeout(step,250)}})()}
+
+/* ---------- drawing ---------- */
+function label(x,y,lines,alignRight){ctx.font='600 12px ui-monospace,Menlo,monospace';var w=0;
+  lines.forEach(function(l){w=Math.max(w,ctx.measureText(l).width)});var h=lines.length*15+6;
+  if(alignRight)x-=w+10;x=Math.max(4,Math.min(W-w-14,x));y=Math.max(60,Math.min(H-h-4,y));
+  ctx.fillStyle='rgba(2,10,14,.72)';ctx.fillRect(x,y,w+10,h);ctx.fillStyle=S.color;ctx.fillRect(x,y,2,h);
+  ctx.textBaseline='top';lines.forEach(function(l,i){ctx.fillStyle=i?'#eafcff':S.color;ctx.fillText(l,x+6,y+4+i*15)})}
+function brackets(x,y,w,h,locked){var c=Math.max(8,Math.min(22,Math.min(w,h)*0.22));ctx.strokeStyle=S.color;ctx.lineWidth=locked?3:1.5;ctx.beginPath();
+  [[x,y,1,1],[x+w,y,-1,1],[x,y+h,1,-1],[x+w,y+h,-1,-1]].forEach(function(p){ctx.moveTo(p[0]+c*p[2],p[1]);ctx.lineTo(p[0],p[1]);ctx.lineTo(p[0],p[1]+c*p[3])});
+  ctx.stroke();if(locked){ctx.globalAlpha=.08;ctx.fillStyle=S.color;ctx.fillRect(x,y,w,h);ctx.globalAlpha=1}}
+function drawTape(){if(!S.tape)return;var y=44+(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--st'))||0),cx=W/2,span=90,ppd=W/span;
+  ctx.font='600 11px ui-monospace,Menlo,monospace';ctx.textAlign='center';ctx.textBaseline='top';
+  if(heading==null){ctx.fillStyle=S.color;ctx.globalAlpha=.7;ctx.fillText(cmpState==='bad'?'COMPASS UNAVAILABLE':'COMPASS ...',cx,y);ctx.globalAlpha=1;ctx.textAlign='left';return}
+  ctx.strokeStyle=S.color;ctx.fillStyle=S.color;ctx.lineWidth=1;ctx.beginPath();
+  var start=Math.floor((heading-span/2)/5)*5;
+  for(var d=start;d<=heading+span/2;d+=5){var x=cx+(d-heading)*ppd,dd=norm(d),big=dd%15===0;ctx.moveTo(x,y);ctx.lineTo(x,y+(big?9:5));
+    if(big){var nm=dd%90===0?['N','E','S','W'][dd/90]:(dd%45===0?['NE','SE','SW','NW'][(dd-45)/90]:String(dd));ctx.fillText(nm,x,y+11)}}
+  ctx.stroke();ctx.beginPath();ctx.moveTo(cx-6,y-8);ctx.lineTo(cx+6,y-8);ctx.lineTo(cx,y-1);ctx.closePath();ctx.fill();
+  ctx.font='700 14px ui-monospace,Menlo,monospace';ctx.fillText(String(Math.round(heading)).padStart(3,'0')+'° '+cardinal(heading),cx,y+27);
+  if(wp&&gps){var off=angDiff(bearing(gps,wp),heading),wx=cx+Math.max(-span/2+3,Math.min(span/2-3,off))*ppd;
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(wx,y+2);ctx.lineTo(wx-5,y-7);ctx.lineTo(wx+5,y-7);ctx.closePath();ctx.fill()}
+  ctx.textAlign='left'}
+function drawReticle(){if(!S.ret)return;var cx=W/2,cy=H/2,r=14;ctx.strokeStyle=S.color;ctx.lineWidth=1;ctx.globalAlpha=.85;ctx.beginPath();
+  ctx.arc(cx,cy,r,0,6.2832);ctx.moveTo(cx-r-8,cy);ctx.lineTo(cx-4,cy);ctx.moveTo(cx+4,cy);ctx.lineTo(cx+r+8,cy);
+  ctx.moveTo(cx,cy-r-8);ctx.lineTo(cx,cy-4);ctx.moveTo(cx,cy+4);ctx.lineTo(cx,cy+r+8);ctx.stroke();ctx.globalAlpha=1}
+function pickLock(){if(lockId!=null){for(var i=0;i<tracks.length;i++)if(tracks[i].id===lockId)return tracks[i];lockId=null}
+  var m=vmap(),best=null,bd=1e9;tracks.forEach(function(t){var cx=m.ox+(t.box[0]+t.box[2]/2)*m.s,cy=m.oy+(t.box[1]+t.box[3]/2)*m.s,d=Math.hypot(cx-W/2,cy-H/2);
+    if(d<bd&&d<Math.min(W,H)*0.3){bd=d;best=t}});return best}
+function drawScan(){var m=vmap();
+  if(modelState==='loading'){label(W/2-90,H/2+40,['LOADING OBJECT DETECTOR...'])}
+  else if(modelState==='bad'){label(W/2-110,H/2+40,['OBJECT DETECTOR OFFLINE','Read and Nav still work'])}
+  var lock=pickLock();
+  tracks.forEach(function(t){if(t.hits<2)return;var x=m.ox+t.box[0]*m.s,y=m.oy+t.box[1]*m.s,w=t.box[2]*m.s,h=t.box[3]*m.s,isL=lock&&lock.id===t.id;
+    brackets(x,y,w,h,isL);var d=estDistance(t),l1=t.cls.toUpperCase()+' '+Math.round(t.score*100)+'%',lines=[l1];
+    if(d!=null)lines.push('~'+fmtDist(d)+' est');else if(isL&&S.dist)lines.push(HEIGHT[t.cls]?'dist: partly out of frame':'dist: n/a for this type');
+    label(x,y-(lines.length*15+10),lines)})}
+function readRegion(){var w=Math.min(W*0.86,560),h=Math.min(H*0.26,220);return {x:(W-w)/2,y:(H-h)/2,w:w,h:h}}
+function drawRead(){var r=readRegion();brackets(r.x,r.y,r.w,r.h,false);ctx.fillStyle='rgba(0,0,0,.28)';
+  ctx.fillRect(0,0,W,r.y);ctx.fillRect(0,r.y+r.h,W,H-r.y-r.h);ctx.fillRect(0,r.y,r.x,r.h);ctx.fillRect(r.x+r.w,r.y,W-r.x-r.w,r.h);
+  var msg=busy?'READING...':(autoRead?'AUTO READ ON':'ZOOM IN, FRAME THE TEXT, TAP READ');ctx.font='600 11px ui-monospace,Menlo,monospace';ctx.fillStyle=S.color;
+  ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(msg,W/2,r.y-6);ctx.textAlign='left'}
+function drawNav(){var cx=W/2,cy=H*0.46;
+  if(!wp){label(cx-120,cy,['NO WAYPOINT SAVED','Tap MARK to save this spot','(parked car, trailhead, exit)']);return}
+  if(!gps){label(cx-90,cy,['WAITING FOR GPS...']);return}
+  var d=haversine(gps,wp),b=bearing(gps,wp);
+  if(heading!=null){var a=angDiff(b,heading)*Math.PI/180,R=Math.min(W,H)*0.2;ctx.save();ctx.translate(cx,cy);ctx.rotate(a);
+    ctx.strokeStyle=S.color;ctx.fillStyle=S.color;ctx.lineWidth=2;ctx.globalAlpha=.9;ctx.beginPath();ctx.moveTo(0,-R);ctx.lineTo(R*0.5,R*0.55);ctx.lineTo(0,R*0.25);ctx.lineTo(-R*0.5,R*0.55);ctx.closePath();
+    ctx.stroke();ctx.globalAlpha=.18;ctx.fill();ctx.restore();ctx.globalAlpha=1}
+  var lines=['WAYPOINT  '+fmtDist(d),'bearing '+String(Math.round(b)).padStart(3,'0')+'° '+cardinal(b)];
+  if(d<Math.max(gps.acc||0,8))lines.push('within GPS accuracy: you are here');if(heading==null)lines.push('compass off: arrow hidden');
+  label(cx-95,cy+Math.min(W,H)*0.2+14,lines)}
+function render(){ctx.clearRect(0,0,W,H);
+  if(running&&!frozen){drawTape();if(mode==='scan'){drawScan();drawReticle()}else if(mode==='read')drawRead();else if(mode==='nav')drawNav();else drawReticle()}
+  else if(frozen&&mode==='read'){var r=readRegion();brackets(r.x,r.y,r.w,r.h,true)}
+  requestAnimationFrame(render)}
+function tickReadout(){var d=new Date();$('clock').textContent=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  $('fps').textContent=(mode==='scan'&&model&&!frozen)?Math.round(detFps)+' FPS':'';
+  var L=[];
+  if(gps){L.push('LAT '+gps.lat.toFixed(5)+'  LON '+gps.lon.toFixed(5));L.push('ACC ±'+fmtDist(gps.acc)+'  ALT '+fmtAlt(gps.alt));if(mode==='nav')L.push('SPD '+fmtSpeed(gps.spd))}
+  else L.push(gpsState==='bad'?'GPS OFF (location not allowed)':'GPS ACQUIRING...');
+  if(pitch!=null&&mode!=='read')L.push('TILT '+(pitch>=0?'+':'')+Math.round(pitch)+'°');
+  if(cmpState==='warn')L.push('COMPASS LOW ACCURACY: wave phone in a figure 8');
+  $('read').textContent=(mode==='clean'||$('panel').style.display==='flex')?'':L.join('\n')}
+
+/* ---------- frame capture ---------- */
+function grab(region,maxSide,minW){var m=vmap(),r=region||{x:0,y:0,w:W,h:H};
+  var sx=(r.x-m.ox)/m.s,sy=(r.y-m.oy)/m.s,sw=r.w/m.s,sh=r.h/m.s;
+  sx=Math.max(0,sx);sy=Math.max(0,sy);sw=Math.min(m.vw-sx,sw);sh=Math.min(m.vh-sy,sh);
+  var k=Math.min(maxSide/Math.max(sw,sh),3);if(minW&&sw*k<minW)k=Math.min(minW/sw,3);
+  var c=document.createElement('canvas');c.width=Math.max(1,Math.round(sw*k));c.height=Math.max(1,Math.round(sh*k));
+  var g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(video,sx,sy,sw,sh,0,0,c.width,c.height);return c}
+function freeze(){var c=grab(null,Math.max(W,H)*DPR);still.width=c.width;still.height=c.height;still.getContext('2d').drawImage(c,0,0);
+  still.style.display='block';frozen=true}
+function unfreeze(){still.style.display='none';frozen=false}
+function enhance(c){var g=c.getContext('2d'),im=g.getImageData(0,0,c.width,c.height),d=im.data,n=d.length,lo=255,hi=0,i,v,hist=new Uint32Array(256);
+  for(i=0;i<n;i+=4){v=(d[i]*77+d[i+1]*150+d[i+2]*29)>>8;d[i]=v;hist[v]++}
+  var tot=n/4,acc=0;for(i=0;i<256;i++){acc+=hist[i];if(acc>tot*0.02){lo=i;break}}acc=0;for(i=255;i>=0;i--){acc+=hist[i];if(acc>tot*0.02){hi=i;break}}
+  var sc=255/Math.max(hi-lo,1);for(i=0;i<n;i+=4){v=Math.max(0,Math.min(255,(d[i]-lo)*sc));d[i]=d[i+1]=d[i+2]=v}
+  g.putImageData(im,0,0);return c}
+
+/* ---------- results panel ---------- */
+function showPanel(title,text,meta,note,kind){panelKind=kind||'';panelText=text||'';$('panelTitle').textContent=title;$('panelBody').textContent=text||'';
+  $('panelMeta').textContent=meta||'';$('panelNote').textContent=note||'';$('panelNote').style.display=note?'block':'none';
+  $('pAi').style.display=(kind==='ocr')?'':'none';$('pAi').textContent=S.key?'AI read':'AI read (needs key)';$('panel').style.display='flex'}
+function hidePanel(){$('panel').style.display='none';unfreeze()}
+
+/* ---------- on-device text reading ---------- */
+function withTimeout(p,ms,msg){return new Promise(function(res,rej){var t=setTimeout(function(){rej(new Error(msg))},ms);
+  p.then(function(v){clearTimeout(t);res(v)},function(e){clearTimeout(t);rej(e)})})}
+function resetOcr(){try{if(ocrWorker)ocrWorker.terminate()}catch(e){}ocrWorker=null;ocrState='off'}
+function getOcr(){if(ocrWorker)return Promise.resolve(ocrWorker);ocrState='loading';
+  var p=(window.Tesseract?Promise.resolve():loadScript(CDN.tess)).then(function(){return window.Tesseract.createWorker('eng',1,{errorHandler:function(e){console.warn(e)}})});
+  return withTimeout(p,45000,'timeout').then(function(w){ocrWorker=w;ocrState='ok';return w})
+  .catch(function(e){ocrState='bad';p.then(function(w){try{w.terminate()}catch(x){}}).catch(function(){});
+    throw new Error('Text reader failed to load. Check the connection and try again.')})}
+function cleanOcr(data){var words=(data.words||[]).filter(function(w){return w.confidence>=45&&/[A-Za-z0-9]/.test(w.text)});
+  if(!words.length)return {text:'',conf:0};var lines=[],cur=[],ly=null;
+  words.forEach(function(w){var y=(w.bbox.y0+w.bbox.y1)/2,h=w.bbox.y1-w.bbox.y0;if(ly!=null&&Math.abs(y-ly)>h*0.7){lines.push(cur.join(' '));cur=[]}cur.push(w.text);ly=y});
+  if(cur.length)lines.push(cur.join(' '));var conf=words.reduce(function(a,w){return a+w.confidence},0)/words.length;return {text:lines.join('\n'),conf:conf}}
+function doRead(silent){if(busy)return Promise.resolve();busy=true;var r=readRegion();var crop=grab(r,2200,1400);lastShot=grab(r,1568);
+  if(!silent){freeze();showPanel('READING...','','',ocrWorker?'':'First read downloads the text reader (a few MB). Later reads are fast.','')}
+  return getOcr().then(function(w){return withTimeout(w.recognize(enhance(crop)),30000,'Reading took too long. Try again.').catch(function(e){resetOcr();throw e})}).then(function(res){var o=cleanOcr(res.data);
+    if(silent){if(o.text.length>2&&o.conf>=60)showPanel('TEXT (AUTO)',o.text,Math.round(o.conf)+'% conf','','ocr');return}
+    if(!o.text)showPanel('NO TEXT READ','','','Nothing legible in the box. Zoom in more, hold steady, or use AI read for angled or distant text.','ocr');
+    else showPanel('TEXT',o.text,Math.round(o.conf)+'% conf',o.conf<70?'Low confidence: some words may be wrong. Zoom in or use AI read.':'','ocr')})
+  .catch(function(e){if(!silent)showPanel('READ FAILED',e.message||String(e),'','','')}).then(function(){busy=false})}
+function autoLoop(){if(!running)return;if(autoRead&&mode==='read'&&!frozen&&!busy&&!document.hidden)doRead(true).then(function(){setTimeout(autoLoop,1800)});else setTimeout(autoLoop,600)}
+
+/* ---------- optional AI deep scan ---------- */
+var PROMPT={scan:'You are the analysis module of a phone camera HUD. Look at the photo and report on the main object nearest the center, plus up to two other notable objects.\nFor each: name; brand and model only if a logo, label or distinctive design makes it clear (otherwise say "brand: unknown"); approximate real size with units and the visual reference you used; one practical note. Then transcribe any clearly legible text.\nRules: plain text, short lines, no markdown. Never guess. Say "unknown" or "not legible" when unsure. Do not identify or name any person; describe people only generically.',
+  read:'Transcribe all text visible in this photo exactly as written, including text that is small, distant or at an angle. Keep line breaks. Write [illegible] for any part you cannot read with confidence instead of guessing. Output only the transcription, no commentary.'};
+function aiCall(canvas,kind){if(!S.key)return Promise.reject(new Error('Add an API key in Opts to use AI scan.'));
+  var b64=canvas.toDataURL('image/jpeg',0.85).split(',')[1],ctl=new AbortController(),to=setTimeout(function(){ctl.abort()},45000);
+  return fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal:ctl.signal,
+    headers:{'content-type':'application/json','x-api-key':S.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:S.model,max_tokens:700,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},{type:'text',text:PROMPT[kind]}]}]})})
+  .then(function(r){clearTimeout(to);return r.json().then(function(j){if(!r.ok)throw new Error((j&&j.error&&j.error.message)||('HTTP '+r.status));
+    var t=(j.content||[]).filter(function(c){return c.type==='text'}).map(function(c){return c.text}).join('\n').trim();if(!t)throw new Error('Empty response');return t})})
+  .catch(function(e){clearTimeout(to);throw new Error(e.name==='AbortError'?'AI scan timed out.':(e.message||'AI scan failed.'))})}
+function doIdentify(){if(busy)return;var lock=pickLock(),local=tracks.filter(function(t){return t.hits>=2}).map(function(t){var d=estDistance(t);
+    return t.cls.toUpperCase()+'  '+Math.round(t.score*100)+'%'+(d!=null?'  ~'+fmtDist(d)+' est':'')}).join('\n');
+  lastShot=grab(null,1568);freeze();
+  if(!S.key){showPanel('ON-DEVICE RESULT',local||'No known object type detected.','','Brand, model and size need AI scan. Add a key in Opts.','');return}
+  busy=true;showPanel('AI SCAN...',local,'','Analyzing the frame...','');
+  aiCall(lastShot,'scan').then(function(t){showPanel('AI SCAN',t,'','AI estimate from one photo. Sizes are approximate.','ai')})
+  .catch(function(e){showPanel('AI SCAN FAILED',e.message+(local?'\n\nOn-device:\n'+local:''),'','','')}).then(function(){busy=false})}
+function doAiRead(){if(busy||!lastShot)return;if(!S.key){toast('Add an API key in Opts first');return}
+  busy=true;var prev=panelText;showPanel('AI READ...',prev,'','Analyzing the frame...','');
+  aiCall(lastShot,'read').then(function(t){showPanel('TEXT (AI)',t,'','','ai')}).catch(function(e){showPanel('AI READ FAILED',e.message,'','','ocr')}).then(function(){busy=false})}
+
+/* ---------- controls ---------- */
+function setMode(m){mode=m;hidePanel();lockId=null;$('modeName').textContent=m.toUpperCase();
+  [].forEach.call(document.querySelectorAll('#modes .btn'),function(b){b.classList.toggle('on',b.dataset.m===m)});
+  var sh=$('shutter');sh.style.display=m==='clean'?'none':'';sh.textContent=m==='scan'?'Identify':(m==='read'?'Read':'Mark');
+  $('auto').style.display=m==='read'?'':'none';LS.set('lens.mode',m)}
+function markWaypoint(){if(!gps){toast('No GPS fix yet');return}if(gps.acc>50)toast('Saved, but GPS accuracy is only ±'+fmtDist(gps.acc),3500);else toast('Waypoint saved');
+  wp={lat:gps.lat,lon:gps.lon,t:Date.now()};LS.set('lens.waypoint',wp)}
+function copyText(){var t=panelText;if(!t)return;var done=function(){toast('Copied')};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done).catch(fallback);else fallback();
+  function fallback(){var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done()}catch(e){toast('Copy failed')}ta.remove()}}
+function bindOpts(){var map={oColor:'color',oUnits:'units',oMax:'max',oModel:'model',oKey:'key'},chk={oTape:'tape',oRet:'ret',oDist:'dist'},rng={oConf:'conf',oFov:'fov'};
+  function sync(){Object.keys(map).forEach(function(id){$(id).value=S[map[id]]});Object.keys(chk).forEach(function(id){$(id).checked=!!S[chk[id]]});
+    Object.keys(rng).forEach(function(id){$(id).value=S[rng[id]]});$('oConfV').textContent=S.conf+'%';$('oFovV').textContent=S.fov+'°'}
+  function save(){Object.keys(map).forEach(function(id){var v=$(id).value.trim();S[map[id]]=map[id]==='max'?parseInt(v,10):v});
+    Object.keys(chk).forEach(function(id){S[chk[id]]=$(id).checked});Object.keys(rng).forEach(function(id){S[rng[id]]=parseInt($(id).value,10)});
+    if(!S.model)S.model='claude-haiku-5-5';LS.set('lens.settings',S);applyTheme();$('oConfV').textContent=S.conf+'%';$('oFovV').textContent=S.fov+'°'}
+  $('opts').addEventListener('input',save);$('opts').addEventListener('change',save);
+  $('gear').onclick=function(){sync();$('opts').style.display='block'};$('oDone').onclick=function(){save();$('opts').style.display='none'};
+  $('oClearWp').onclick=function(){wp=null;LS.set('lens.waypoint',null);toast('Waypoint cleared')}}
+function bindUi(){
+  [].forEach.call(document.querySelectorAll('#modes .btn'),function(b){b.onclick=function(){setMode(b.dataset.m)}});
+  $('shutter').onclick=function(){if(mode==='scan')doIdentify();else if(mode==='read')doRead(false);else if(mode==='nav')markWaypoint()};
+  $('auto').onclick=function(){autoRead=!autoRead;$('auto').classList.toggle('on',autoRead)};
+  $('pClose').onclick=hidePanel;$('pCopy').onclick=copyText;$('pAi').onclick=doAiRead;
+  $('zIn').onclick=function(){setZoom(zoom*1.4)};$('zOut').onclick=function(){setZoom(zoom/1.4)};$('torch').onclick=toggleTorch;
+  var pd=0,pz=1;
+  hud.addEventListener('touchstart',function(e){if(e.touches.length===2){pd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);pz=zoom}},{passive:true});
+  hud.addEventListener('touchmove',function(e){if(e.touches.length===2&&pd>0){var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);setZoom(pz*d/pd)}e.preventDefault()},{passive:false});
+  hud.addEventListener('touchend',function(){pd=0},{passive:true});
+  hud.addEventListener('click',function(e){if(mode!=='scan'||frozen)return;var m=vmap(),hit=null,area=1e12;
+    tracks.forEach(function(t){var x=m.ox+t.box[0]*m.s,y=m.oy+t.box[1]*m.s,w=t.box[2]*m.s,h=t.box[3]*m.s;
+      if(e.clientX>=x&&e.clientX<=x+w&&e.clientY>=y&&e.clientY<=y+h&&w*h<area){area=w*h;hit=t}});lockId=hit?hit.id:null});
+  document.addEventListener('gesturestart',function(e){e.preventDefault()});
+  window.addEventListener('resize',resize);window.addEventListener('orientationchange',function(){setTimeout(resize,250)});
+  document.addEventListener('visibilitychange',function(){if(!document.hidden&&running){video.play().catch(function(){});wake()}})}
+function wake(){try{if(navigator.wakeLock)navigator.wakeLock.request('screen').catch(function(){})}catch(e){}}
+
+/* ---------- boot ---------- */
+function start(){$('go').disabled=true;$('startErr').textContent='';var perm=null;
+  try{if(window.DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==='function')perm=DeviceOrientationEvent.requestPermission()}catch(e){perm=Promise.reject(e)}
+  var cam=startCamera();
+  cam.then(function(){running=true;$('start').style.display='none';startMotion(perm);startGps();wake();setZoom(1);
+    setMode(LS.get('lens.mode','scan'));detectLoop();autoLoop();setInterval(tickReadout,300);loadDetector()})
+  .catch(function(e){$('go').disabled=false;setDot('dCam','bad');var n=e&&e.name;
+    $('startErr').textContent=n==='NotAllowedError'?'Camera access was blocked.\nIn Safari tap the "aA" or page-settings button in the address bar, choose Website Settings, set Camera to Allow, then reload.'
+      :n==='NotFoundError'?'No camera found on this device.':(e&&e.message)||'Could not start the camera.'})}
+applyTheme();resize();bindUi();bindOpts();setDot('dCam','');requestAnimationFrame(render);
+$('go').onclick=start;
+if(location.protocol!=='https:'&&location.hostname!=='localhost'&&location.hostname!=='127.0.0.1')
+  $('startErr').textContent='This page must be served over https for the camera to work.';
+window.addEventListener('error',function(e){console.warn(e.message)});
+})();
+</script>
+</body>
+</html>
