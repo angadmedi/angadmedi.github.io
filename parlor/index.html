@@ -167,7 +167,7 @@ const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a
 const rid=()=>Math.random().toString(36).slice(2,9);
 const LS={get(k){try{return JSON.parse(localStorage.getItem('parlor.'+k))}catch(e){return null}},set(k,v){try{localStorage.setItem('parlor.'+k,JSON.stringify(v))}catch(e){}}};
 const SEALS=['#c27531','#1f6f63','#8c2f39','#2d4a8a','#6b4c9a','#a8841a','#3c6e2f','#3a3a3a'];
-const LET='ABCD', KIND={t:'Trivia',d:'Draw It',h:'Hum It'};
+const LET='ABCDEFGH', KIND={t:'Trivia',d:'Draw It',h:'Hum It',n:'Closest Guess',v:'Family Vote',f:'Fill the Gap'};
 const NOROOM='Couldn’t open the game room. Check the internet connection and reload the page.';
 
 /* [question, correct, wrong, wrong, wrong] */
@@ -226,6 +226,48 @@ const TRIVIA=[
 const WORDS=["Pizza","Lighthouse","Snowman","Roller skates","Giraffe","Haunted house","Birthday cake","Fire hydrant","Hot air balloon","Cactus","Spaghetti","Toaster","Mermaid","Bowling","Volcano","Taco","Rocket","Octopus","Umbrella","Dentist","Camping","Ferris wheel","Scarecrow","Lawn mower","Beehive","Surfboard","Igloo","Banjo","Bicycle","Flamingo","Pirate ship","Sunburn","Traffic jam","Karaoke","Turkey dinner","Snail","Treehouse","Penguin","Statue of Liberty","Hammock","Popcorn","Tooth fairy","Lobster","Garden gnome","Yo-yo","Waterfall"];
 const SONGS=["Sweet Caroline — Neil Diamond","Don’t Stop Believin’ — Journey","Billie Jean — Michael Jackson","Dancing Queen — ABBA","Bohemian Rhapsody — Queen","I Will Survive — Gloria Gaynor","Hey Jude — The Beatles","Livin’ on a Prayer — Bon Jovi","Respect — Aretha Franklin","Stayin’ Alive — Bee Gees","Sweet Child o’ Mine — Guns N’ Roses","My Girl — The Temptations","Y.M.C.A. — Village People","Africa — Toto","Take On Me — a-ha","Jump — Van Halen","Uptown Funk — Mark Ronson & Bruno Mars","Shake It Off — Taylor Swift","Hotel California — Eagles","Material Girl — Madonna","Brown Eyed Girl — Van Morrison","September — Earth, Wind & Fire","Jingle Bells — Traditional","The Pink Panther Theme — Henry Mancini","Mission: Impossible Theme — Lalo Schifrin","Happy — Pharrell Williams","Single Ladies — Beyoncé","Can’t Help Falling in Love — Elvis Presley","Wonderwall — Oasis","Seven Nation Army — The White Stripes","Girls Just Want to Have Fun — Cyndi Lauper","Superstition — Stevie Wonder","Lean on Me — Bill Withers","Under Pressure — Queen & David Bowie","Every Breath You Take — The Police","Twist and Shout — The Beatles"];
 
+/* [prompt, correct, wrong, wrong, wrong] */
+const GAPS=[
+["Wendy’s, 1984: “Where’s the ___?”","beef","burger","fries","cheese"],
+["Nike: “Just ___ it.”","do","try","win","make"],
+["Dairy ads: “Got ___?”","milk","cookies","juice","calcium"],
+["M&M’s: “Melts in your mouth, not in your ___.”","hand","pocket","car","lap"],
+["Miller Lite: “Tastes great, less ___.”","filling","calories","bitter","foam"],
+["Rice Krispies: “Snap! Crackle! ___!”","Pop","Boom","Crunch","Bang"],
+["Alka-Seltzer: “Plop, plop, fizz, fizz, oh what a ___ it is.”","relief","feeling","treat","joy"],
+["“Like a good neighbor, ___ is there.”","State Farm","Allstate","Nationwide","Geico"],
+["Star Wars: “May the ___ be with you.”","Force","light","Jedi","stars"],
+["Casablanca: “Here’s looking at you, ___.”","kid","doll","pal","sweetheart"],
+["The Terminator: “I’ll be ___.”","back","there","waiting","fine"],
+["Jaws: “You’re gonna need a bigger ___.”","boat","net","harpoon","beach"],
+["Apollo 13: “Houston, we have a ___.”","problem","situation","leak","visitor"],
+["E.T.: “E.T. phone ___.”","home","mom","Elliott","earth"],
+["Jerry Maguire: “Show me the ___!”","money","love","contract","way"],
+["Forrest Gump: “Life is like a box of ___.”","chocolates","crayons","cereal","surprises"],
+["Dirty Dancing: “Nobody puts Baby in a ___.”","corner","crib","box","car"],
+["The Wizard of Oz: “Toto, I’ve a feeling we’re not in ___ anymore.”","Kansas","Oz","Nebraska","the farm"],
+["A Few Good Men: “You can’t handle the ___!”","truth","pressure","heat","job"],
+["The Sixth Sense: “I see dead ___.”","people","flowers","batteries","ends"]
+];
+/* [question, exact answer] */
+const NUMS=[
+["In what year did the final episode of “Seinfeld” air?",1998],
+["How tall is the Empire State Building to its tip, in feet?",1454],
+["In what year did the Titanic sink?",1912],
+["How many episodes of “Friends” were made?",236],
+["In what year did Elvis Presley die?",1977],
+["How many bones are in the adult human body?",206],
+["In what year was the first Super Bowl played?",1967],
+["How old was Betty White when she died?",99],
+["How long is a football field, end zones included, in feet?",360],
+["In what year did the Beatles first appear on “The Ed Sullivan Show”?",1964],
+["In what year did Disneyland open?",1955],
+["How tall is Mount Everest, in feet?",29032],
+["In what year did the first “Star Wars” movie come out?",1977],
+["How many stories tall is the Empire State Building?",102],
+["In what year did the first McDonald’s Happy Meal appear nationwide?",1979]
+];
+const VOTES=["show up late to their own party","get lost even with GPS","cry at a TV commercial","win a hot-dog eating contest","become famous","talk their way out of a speeding ticket","start chatting with a stranger in line","still have their first cell phone in a drawer","grab the karaoke mic without being asked","forget why they walked into a room","survive a zombie apocalypse","eat dessert first","bring way too much food to a potluck","fall asleep during a movie","win on a game show"];
 const corners=()=>['tl','tr','bl','br'].map(c=>`<svg class="corner ${c}" aria-hidden="true"><use href="#cn"/></svg>`).join('');
 const mark=cls=>`<div class="mark ${cls||''}" role="img" aria-label="Parlor"><div class="initial"><span>P</span></div><div class="word">ARLOR</div></div>`;
 const seal=(n,c,s)=>`<span class="seal ${s?'s':''}" style="--sc:${SEALS[c]||SEALS[0]}">${esc((n||'?').trim().charAt(0).toUpperCase())}</span>`;
@@ -322,7 +364,7 @@ const genCode=()=>Array.from({length:4},()=>'BCDFGHJKLMNPQRSTVWXZ'[Math.random()
 async function startHost(){
   mode='host';initAudio();
   let code=LS.get('hostcode');if(typeof code!=='string'||!/^[A-Z]{4}$/.test(code))code=genCode();LS.set('hostcode',code);
-  Object.assign(H,{code,players:{},seq:[],i:-1,phase:'lobby',round:null,first:{},res:[],hold:false,rv:0,left:0,set:LS.get('hostset')||{tq:10,draw:true,hum:true},uT:new Set(),uW:new Set(),uS:new Set(),drawing:'',key:'',last:'',lastDraw:null});
+  Object.assign(H,{code,players:{},seq:[],i:-1,phase:'lobby',round:null,first:{},res:[],hold:false,rv:0,left:0,set:Object.assign({tq:10,draw:true,hum:true,gap:true,num:true,vote:true},LS.get('hostset')||{}),uT:new Set(),uW:new Set(),uS:new Set(),uG:new Set(),uN:new Set(),uV:new Set(),drawing:'',key:'',last:'',lastDraw:null});
   renderHost();
   H.connecting=true;
   for(let tries=0;tries<4&&!chan;tries++){
@@ -348,7 +390,7 @@ function hostPeers(peers){
     const R=H.round;
     if(R&&H.phase==='q'){
       const a=r.a;
-      if(a&&a.id===R.id&&k!==R.pf&&!H.first[k]&&Number.isInteger(a.x)&&a.x>=0&&a.x<4){H.first[k]={x:a.x,t:Date.now()};sfx('pop')}
+      if(a&&a.id===R.id&&k!==R.pf&&!H.first[k]&&(R.k==='n'?(typeof a.x==='number'&&isFinite(a.x)&&Math.abs(a.x)<1e9):(Number.isInteger(a.x)&&a.x>=0&&a.x<R.o.length))){H.first[k]={x:a.x,t:Date.now()};sfx('pop')}
       if(R.k==='d'&&k===R.pf)H.drawing=(r.d&&r.d.id===R.id&&typeof r.d.s==='string')?r.d.s.slice(0,3600):'';
     }
   }
@@ -369,6 +411,10 @@ function makeRound(it){
   const on=plist().filter(p=>p.on);let k=it.k,pf=it.pf;
   if(k!=='t'){if(on.length<2)k='t';else if(!H.players[pf]||!H.players[pf].on)pf=on[Math.random()*on.length|0].k}
   const id=rid(),start=Date.now();
+  if(k==='v'&&on.length<2)k='t';
+  if(k==='f'){const t=pick(GAPS,H.uG),o=shuffle(t.slice(1));return{k,id,q:t[0],o,ans:o.indexOf(t[1]),dur:20,start,end:start+20000}}
+  if(k==='n'){const t=pick(NUMS,H.uN);return{k,id,q:t[0],o:[],ans:t[1],dur:25,start,end:start+25000}}
+  if(k==='v'){const ps=on.slice(0,8);return{k,id,q:'Who’s most likely to '+pick(VOTES,H.uV)+'?',o:ps.map(p=>p.n),pk:ps.map(p=>p.k),dur:20,start,end:start+20000}}
   if(k==='t'){const t=pick(TRIVIA,H.uT),o=shuffle(t.slice(1));return{k,id,q:t[0],o,ans:o.indexOf(t[1]),dur:20,start,end:start+20000}}
   const list=k==='d'?WORDS:SONGS,w=pick(list,k==='d'?H.uW:H.uS);
   const o=shuffle([w,...shuffle(list.filter(x=>x!==w)).slice(0,3)]);
@@ -381,6 +427,9 @@ function buildSeq(keys){
   let hs=multi&&H.set.hum?shuffle(keys.slice()):[];
   if(ds.length&&hs.length)hs=[...ds.slice(1),ds[0]];
   for(let j=0;j<Math.max(ds.length,hs.length);j++){if(ds[j])sp.push({k:'d',pf:ds[j]});if(hs[j])sp.push({k:'h',pf:hs[j]})}
+  const ex=[];if(H.set.gap)ex.push({k:'f'},{k:'f'});if(H.set.num)ex.push({k:'n'},{k:'n'});if(multi&&H.set.vote)ex.push({k:'v'},{k:'v'});
+  shuffle(ex);const mix=[];while(sp.length||ex.length){if(sp.length)mix.push(sp.shift());if(ex.length)mix.push(ex.shift())}
+  sp.push(...mix);
   const out=[];let t=0;
   sp.forEach((s,j)=>{const tg=Math.round((j+1)*tq/(sp.length+1));while(t<tg){out.push({k:'t'});t++}out.push(s)});
   while(t<tq){out.push({k:'t'});t++}
@@ -398,6 +447,18 @@ function next(){
 }
 function reveal(){
   const R=H.round;H.res=[];let right=0;
+  if(R.k==='n'){
+    const g=Object.entries(H.first).map(([k,f])=>({k,x:f.x,d:Math.abs(f.x-R.ans)})).sort((a,b)=>a.d-b.d);
+    const ds=[...new Set(g.map(e=>e.d))];
+    for(const e of g){const rk=ds.indexOf(e.d),pts=[1000,600,300][rk]??100,bonus=e.d===0?500:0;if(H.players[e.k])H.players[e.k].score+=pts+bonus;H.res.push([e.k,rk===0?1:0,pts+bonus,e.x]);if(rk===0)right++}
+  }else if(R.k==='v'){
+    const cnt=R.o.map(()=>0);for(const k in H.first)cnt[H.first[k].x]++;
+    const mx=Math.max(0,...cnt);R.ans=mx?cnt.map((c,i)=>c===mx?i:-1).filter(i=>i>=0):[];
+    const pts={},ok={};
+    for(const k in H.first){if(R.ans.includes(H.first[k].x)){pts[k]=(pts[k]||0)+500;ok[k]=1;right++}else pts[k]=pts[k]||0}
+    for(const i of R.ans){const k=R.pk[i];pts[k]=(pts[k]||0)+250}
+    for(const k in pts){if(H.players[k])H.players[k].score+=pts[k];H.res.push([k,ok[k]?1:(H.first[k]?0:3),pts[k],H.first[k]?H.first[k].x:-1])}
+  }else
   for(const k in H.first){const f=H.first[k],ok=f.x===R.ans,el=(f.t-R.start)/1000,pts=ok?500+Math.round(500*Math.max(0,1-el/R.dur)):0;
     if(ok)right++;if(H.players[k])H.players[k].score+=pts;H.res.push([k,ok?1:0,pts,f.x])}
   if(R.pf&&H.players[R.pf]){const b=right*250;H.players[R.pf].score+=b;H.res.push([R.pf,2,b,-1])}
@@ -410,6 +471,7 @@ function hostPub(){
   if(H.phase==='r'){s.ans=R.ans;s.res=H.res}
   const j=JSON.stringify(s);if(j===H.last)return;H.last=j;put({r:'h',code:H.code,s});
 }
+const ansText=(k,o,ans)=>k==='n'?Number(ans).toLocaleString():k==='v'?(Array.isArray(ans)&&ans.length?ans.map(i=>o[i]).join(' & '):'No votes'):(o[ans]??'');
 const ranked=()=>plist().slice().sort((a,b)=>b.score-a.score);
 function renderHost(){
   if(mode!=='host')return;
@@ -430,6 +492,9 @@ function hostBuild(){
         <div class="opts-set">
           <div class="row"><span>Trivia questions</span>${[6,10,15].map(n=>`<button class="pill" data-tq="${n}" aria-pressed="${s.tq===n}">${n}</button>`).join('')}</div>
           <div class="row"><span>Draw It rounds</span><button class="pill" data-tg="draw" aria-pressed="${!!s.draw}">${s.draw?'On':'Off'}</button><span class="small" style="min-width:0">each player sketches once</span></div>
+          <div class="row"><span>Fill the Gap</span><button class="pill" data-tg="gap" aria-pressed="${!!s.gap}">${s.gap?'On':'Off'}</button><span class="small" style="min-width:0">finish the slogan or movie line</span></div>
+          <div class="row"><span>Closest Guess</span><button class="pill" data-tg="num" aria-pressed="${!!s.num}">${s.num?'On':'Off'}</button><span class="small" style="min-width:0">type a number, nearest wins</span></div>
+          <div class="row"><span>Family Vote</span><button class="pill" data-tg="vote" aria-pressed="${!!s.vote}">${s.vote?'On':'Off'}</button><span class="small" style="min-width:0">who’s most likely to…</span></div>
           <div class="row"><span>Hum It rounds</span><button class="pill" data-tg="hum" aria-pressed="${!!s.hum}">${s.hum?'On':'Off'}</button><span class="small" style="min-width:0">each player hums once</span></div>
         </div>
         <button class="go" id="start">Start the game</button>
@@ -442,10 +507,10 @@ function hostBuild(){
     const top=`<header class="hdr">${mark('mini')}<span class="ribbon cap">Round ${H.i+1} of ${H.seq.length} · ${KIND[R.k]}</span>
       <div class="timer" id="timer"><svg viewBox="0 0 86 86"><circle cx="43" cy="43" r="37" fill="#e9f2ee" stroke="#17191a" stroke-width="3"/><circle id="ring" cx="43" cy="43" r="31" fill="none" stroke="url(#fg)" stroke-width="9" stroke-dasharray="194.8" stroke-dashoffset="0"/></svg><b id="tnum"></b></div></header>`;
     let stage;
-    if(R.k==='t')stage=`<div class="qcard"><span class="plaque cap">Trivia</span><h1 class="q">${esc(R.q)}</h1></div>${opts}`;
+    if(R.k!=='d'&&R.k!=='h')stage=`<div class="qcard"><span class="plaque cap">${KIND[R.k]}</span><h1 class="q">${esc(R.q)}</h1>${R.k==='n'?'<span class="small">Type your best guess on your phone. Closest wins; exactly right earns a bonus.</span>':R.k==='v'?'<span class="small">Vote on your phone. Points if you pick who the family picks.</span>':''}</div>${R.k==='n'?'<div class="seatrow" id="guesses"></div>':opts}`;
     else if(R.k==='d')stage=`<div class="split"><div class="easel"><canvas id="board"></canvas><span class="tag plaque cap">${esc(pf?pf.n:'Someone')} is drawing</span></div><div class="stage"><div class="qcard"><h1 class="q">${esc(R.q)}</h1><span class="small">Guess on your phone. No peeking at the artist!</span></div>${opts}</div></div>`;
     else stage=`<div class="split"><div class="qcard">${gram}<div class="who-perf">${esc(pf?pf.n:'Someone')} is humming</div><span class="small">Humming, whistling and “da-da-da” only. No words!</span></div><div class="stage"><div class="qcard"><h1 class="q">${esc(R.q)}</h1></div>${opts}</div></div>`;
-    const foot=H.phase==='r'?`<div class="nextbar"><span class="answer-line">Answer: <b>${esc(R.o[R.ans])}</b></span><div class="drain" id="drain" style="--d:${R.k==='t'?8:10}s"><i></i></div><button class="btn" id="hold">Hold</button><button class="btn f" id="nxt">Next</button></div>`:'';
+    const foot=H.phase==='r'?`<div class="nextbar"><span class="answer-line">${R.k==='v'?'The family picked':'Answer'}: <b>${esc(ansText(R.k,R.o,R.ans))}</b></span><div class="drain" id="drain" style="--d:${R.k==='t'?8:10}s"><i></i></div><button class="btn" id="hold">Hold</button><button class="btn f" id="nxt">Next</button></div>`:'';
     body=`${top}<section class="stage">${stage}</section>${foot}<footer class="seatrow" id="chips"></footer>`;
   }else{
     const rk=ranked(),cls=['p2','p1','p3'],ord=[rk[1],rk[0],rk[2]];
@@ -481,11 +546,14 @@ function hostDyn(){
     chips.innerHTML=ranked().map(p=>{let st='',cl='';
       if(p.k===R.pf){st=R.k==='d'?'Drawing':'Humming';if(H.phase==='r'&&resM[p.k])st=`+${resM[p.k][2]}`}
       else if(H.phase==='q'){if(H.first[p.k]){st='Locked in';cl='done'}else st='Thinking…'}
-      else{const r=resM[p.k];st=r?(r[1]?`+${r[2]}`:'Missed'):'No answer';if(r&&r[1])cl='done'}
+      else{const r=resM[p.k];st=r?(r[2]>0?`+${r[2]}`:'Missed'):'No answer';if(r&&r[1])cl='done'}
       if(!p.on)cl+=' off';
       return `<div class="chip ${cl}">${seal(p.n,p.c,1)}<span>${esc(p.n)}</span><b>${p.score.toLocaleString()}</b><span class="st">${esc(st)}</span></div>`}).join('')}
+  const gs=q('#guesses');
+  if(gs&&H.phase==='r')gs.innerHTML=H.res.slice().sort((a,b)=>Math.abs(a[3]-R.ans)-Math.abs(b[3]-R.ans)).map(r=>{const p=H.players[r[0]];return p?`<div class="chip ${r[1]?'done':''}">${seal(p.n,p.c,1)}<span>${esc(p.n)}</span><b>${Number(r[3]).toLocaleString()}</b><span class="gain">+${r[2]}</span></div>`:''}).join('');
   if(H.phase==='r'){
-    app.querySelectorAll('.opt').forEach(el=>{const i=+el.dataset.i;el.classList.toggle('right',i===R.ans);el.classList.toggle('dim',i!==R.ans);
+    const isR=i=>Array.isArray(R.ans)?R.ans.includes(i):i===R.ans;
+    app.querySelectorAll('.opt').forEach(el=>{const i=+el.dataset.i;el.classList.toggle('right',isR(i));el.classList.toggle('dim',!isR(i));
       el.querySelector('.who').innerHTML=H.res.filter(r=>r[3]===i).map(r=>{const p=H.players[r[0]];return p?seal(p.n,p.c,1):''}).join('')});
   }
   const cv=q('#board');
@@ -547,7 +615,7 @@ function playerBuild(role,ans){
     b=`${bar('Room '+P.code)}<div class="card">${seal(P.n,P.c)}<div class="huge">${esc(P.n)}</div><p>You’re seated. Watch the big screen; the host will start soon.</p></div>
     <div class="seatrow">${pl.map(p=>`<div class="chip">${seal(p[1],p[2],1)}<span>${esc(p[1])}</span></div>`).join('')}</div><button class="btn" id="change">Change code or name</button>`;
   }else if(s.p==='q'||s.p==='r'){
-    const o=Array.isArray(s.o)?s.o.slice(0,4):[],k=KIND[s.k]||'Round',lbl=`${k} · ${s.n}/${s.tot}`;
+    const o=Array.isArray(s.o)?s.o.slice(0,8):[],k=KIND[s.k]||'Round',lbl=`${k} · ${s.n}/${s.tot}`;
     if(s.p==='q'&&role==='perf'&&s.k==='d'){
       b=`${bar(lbl)}<div class="card"><span class="cap small">Draw this</span><div class="huge">${esc(s.w)}</div><span class="small">No letters or numbers. Everyone is watching the big screen.</span></div>
       <canvas class="pad" id="pad"></canvas><div class="ink" aria-label="Ink left"><i id="inkbar" style="width:100%"></i></div>
@@ -556,18 +624,23 @@ function playerBuild(role,ans){
       const [t,a]=String(s.w||'').split(' — ');
       b=`${bar(lbl)}<div class="card"><span class="cap small">Your song</span><div class="huge">${esc(t)}</div><p>${esc(a||'')}</p></div>
       <div class="card"><p><b>Hum it, whistle it, “da-da-da” it.</b> No words allowed. Points for every family member who guesses right.</p></div>`;
+    }else if(s.p==='q'&&s.k==='n'){
+      b=`${bar(lbl)}<p class="pq">${esc(s.q)}</p>${ans!==undefined?`<div class="card"><span class="cap small">Locked in</span><div class="huge">${esc(Number(ans).toLocaleString())}</div></div>`:`<form id="nf" class="phone"><div class="field"><label for="nIn">Your guess</label><input id="nIn" type="number" inputmode="decimal" step="any" required></div><button class="go" type="submit">Lock it in</button></form>`}
+      <p class="small center">Closest guess wins. Exactly right earns a 500-point bonus.</p>`;
     }else if(s.p==='q'){
-      b=`${bar(lbl)}${s.k==='t'?`<p class="pq">${esc(s.q)}</p>`:`<p class="pq">${esc(s.q)} <span class="small">Watch${s.k==='h'?' and listen':''}!</span></p>`}
+      b=`${bar(lbl)}${s.k!=='d'&&s.k!=='h'?`<p class="pq">${esc(s.q)}</p>`:`<p class="pq">${esc(s.q)} <span class="small">Watch${s.k==='h'?' and listen':''}!</span></p>`}
       <div class="phone">${o.map((x,i)=>`<button class="popt ${ans===i?'pick':''}" data-i="${i}" ${ans!==undefined?'disabled':''}><span class="L">${LET[i]}</span><span>${esc(x)}</span></button>`).join('')}</div>
       <p class="small center">${ans!==undefined?'Locked in. Eyes on the big screen.':'Faster answers score more.'}</p>`;
     }else{
       const r=myRes(),pl=(Array.isArray(s.pl)?s.pl:[]).slice().sort((a,b)=>b[3]-a[3]),idx=pl.findIndex(p=>p[0]===P.n.toLowerCase()),mine=pl[idx];
       let head,sub;
       if(r&&r[1]===2){head=`+${r[2]}`;sub='Your audience points'}
-      else if(r&&r[1]===1){head=`+${r[2]}`;sub='Correct!'}
+      else if(r&&r[1]===1){head=`+${r[2]}`;sub=s.k==='v'?'You read the room!':s.k==='n'?'Closest guess!':'Correct!'}
+      else if(r&&s.k==='n'){head=`+${r[2]}`;sub=`You guessed ${Number(r[3]).toLocaleString()}`}
+      else if(r&&r[2]>0){head=`+${r[2]}`;sub='The family picked you!'}
       else if(r){head='So close';sub='Not this time'}
       else{head='Too slow';sub='No answer in time'}
-      b=`${bar(lbl)}<div class="card"><div class="huge">${esc(head)}</div><p>${esc(sub)}</p><p class="small">Answer: <b>${esc(o[s.ans]??'')}</b></p></div>
+      b=`${bar(lbl)}<div class="card"><div class="huge">${esc(head)}</div><p>${esc(sub)}</p><p class="small">${s.k==='v'?'The family picked':'Answer'}: <b>${esc(ansText(s.k,o,s.ans))}</b></p></div>
       ${mine?`<div class="card"><span class="cap small">Your standing</span><div class="huge">${idx+1}${['st','nd','rd'][idx]||'th'} place</div><p>${Number(mine[3]).toLocaleString()} points</p></div>`:''}`;
     }
   }else if(s.p==='end'){
@@ -582,6 +655,7 @@ function playerBuild(role,ans){
     const x=+btn.dataset.i;P.ans[P.s.id]=x;put({a:{id:P.s.id,x}});try{navigator.vibrate&&navigator.vibrate(30)}catch(e){}renderPlayer();
   });
   if(q('#pad'))setupPad(q('#pad'));
+  q('#nf')&&(q('#nf').onsubmit=e=>{e.preventDefault();const v=Number(q('#nIn').value);if(!P.s||P.s.p!=='q'||!isFinite(v)||Math.abs(v)>=1e9||P.ans[P.s.id]!==undefined)return;P.ans[P.s.id]=v;put({a:{id:P.s.id,x:v}});renderPlayer()});
   const t=q('#ptime');if(t&&s)t.textContent=s.p==='q'?(s.left??''):'';
 }
 function setupPad(cv){
